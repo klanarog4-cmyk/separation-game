@@ -1,0 +1,1019 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ภารกิจแยกสารอลเวง (20 ด่าน)</title>
+    <!-- ใช้ Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Mali:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- ใช้ Font Awesome สำหรับไอคอน -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- ใช้ Tone.js สำหรับระบบเสียง -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    
+    <style>
+        :root {
+            --primary-color: #FF9800;
+            --secondary-color: #4CAF50;
+            --bg-sky: #87CEEB;
+            --text-main: #333;
+            --panel-bg: #FFF8E1;
+            --border-wood: #5D4037;
+        }
+
+        * { box-sizing: border-box; user-select: none; }
+
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            font-family: 'Mali', cursive, sans-serif;
+            background-color: #263238; /* สีพื้นหลังนอกกรอบเกม */
+            display: flex; justify-content: center; align-items: center;
+            overflow: hidden;
+        }
+
+        #game-container {
+            width: 1024px; height: 576px; /* อัตราส่วน 16:9 */
+            background-color: var(--bg-sky);
+            position: relative; border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            overflow: hidden; border: 12px solid #212121;
+        }
+
+        #game-background {
+            position: absolute; width: 100%; height: 100%; z-index: 1;
+            background: linear-gradient(to bottom, #87CEEB 0%, #E0F7FA 50%, #C8E6C9 50%, #4CAF50 100%);
+        }
+        
+        .cloud { position: absolute; background: white; border-radius: 50px; opacity: 0.8; z-index: 2; }
+        .cloud-1 { width: 120px; height: 40px; top: 10%; left: 10%; animation: floatCloud 30s linear infinite; }
+        .cloud-2 { width: 180px; height: 55px; top: 15%; right: 20%; animation: floatCloud 45s linear infinite reverse; }
+        .cloud-3 { width: 100px; height: 35px; top: 5%; left: 50%; animation: floatCloud 25s linear infinite; }
+        @keyframes floatCloud { 0% { transform: translateX(0); } 100% { transform: translateX(200px); } }
+
+        .tree { position: absolute; bottom: 30%; z-index: 3; font-size: 80px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
+        .tree-1 { left: 5%; bottom: 35%; font-size: 100px;}
+        .tree-2 { left: 30%; bottom: 32%; font-size: 90px;}
+        .tree-3 { left: 60%; bottom: 40%; font-size: 70px; opacity: 0.8;}
+        .tree-4 { left: 85%; bottom: 30%; font-size: 110px;}
+        .house { position: absolute; z-index: 3; font-size: 60px; bottom: 35%; }
+        .house-1 { left: 15%; }
+        .house-2 { left: 45%; font-size: 50px;}
+
+        .pathway {
+            position: absolute; height: 40px; background-color: #D7CCC8;
+            bottom: 25%; left: 0; width: 100%; z-index: 4;
+            border-top: 3px solid #8D6E63; border-bottom: 3px solid #8D6E63;
+        }
+
+        #world-map {
+            position: absolute; top: 0; left: 0; width: 3000px; /* กว้างพอสำหรับ 20 ด่าน */
+            height: 100%; z-index: 5; transition: transform 0.5s ease;
+        }
+
+        #top-ui-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 20; pointer-events: none;
+        }
+        .ui-element { pointer-events: auto; }
+
+        .sound-toggle-btn {
+            background-color: var(--border-wood); color: white;
+            border: 2px solid #3E2723; border-radius: 50%;
+            width: 45px; height: 45px; font-size: 20px;
+            cursor: pointer; box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            display: flex; justify-content: center; align-items: center;
+            transition: all 0.2s; position: absolute; right: 20px; top: 15px;
+        }
+        .sound-toggle-btn:hover { transform: scale(1.1); }
+        .sound-toggle-btn.muted { background-color: #757575; border-color: #424242; }
+
+        .map-nav-btn {
+            position: absolute; top: 50%; transform: translateY(-50%);
+            background: rgba(0,0,0,0.5); color: white; border-radius: 50%;
+            width: 50px; height: 50px; display: flex; justify-content: center; align-items: center;
+            font-size: 24px; cursor: pointer; transition: 0.2s;
+        }
+        .map-nav-btn:hover { background: rgba(0,0,0,0.8); scale: 1.1; }
+        #nav-left { left: 10px; } #nav-right { right: 10px; }
+
+        /* เพิ่ม Style สำหรับตราโรงเรียน */
+        .school-logo-container {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 25;
+            display: flex;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 5px 10px;
+            border-radius: 10px;
+            border: 2px solid var(--border-wood);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            height: 54px; /* ล็อคความสูงป้องกันกล่องพัง */
+            overflow: hidden;
+        }
+        
+        .school-logo {
+            width: 40px;
+            height: 40px; /* ล็อคขนาดภาพ */
+            object-fit: contain;
+            margin-right: 10px;
+        }
+
+        .school-name {
+            font-size: 15px;
+            font-weight: bold;
+            color: #1B5E20;
+            white-space: nowrap;
+        }
+
+        #top-bar {
+            position: absolute; top: 0; left: 0; width: 100%; padding: 10px 0;
+            display: flex; flex-direction: column; align-items: center; gap: 5px;
+        }
+        .title-panel {
+            background-color: var(--border-wood); color: white; padding: 5px 30px;
+            border-radius: 0 0 20px 20px; border: 3px solid #3E2723; border-top: none;
+            text-align: center; box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            z-index: 21; /* ให้กล่องชื่ออยู่บนสุด */
+        }
+        .title-panel h1 { margin: 0; font-size: 20px; letter-spacing: 1px; }
+        .title-panel h2 { margin: 0; font-size: 14px; color: #FFECB3; font-weight: normal; }
+
+        #progress-tracker-container {
+            width: 80%; /* จำกัดความกว้างไม่ให้ล้นจอ */
+            overflow: hidden; /* ซ่อนส่วนที่ล้น */
+            padding: 15px 5px 5px 5px; /* เพิ่ม padding ด้านบนให้ตัวเลข */
+            margin-top: 5px;
+            background-color: rgba(255,248,225,0.9); border: 2px solid var(--border-wood);
+            border-radius: 15px; box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            position: relative;
+            z-index: 20;
+            display: flex;
+            justify-content: flex-start;
+        }
+        
+        #progress-tracker {
+            display: flex; gap: 10px; padding: 0 10px; transition: transform 0.3s ease;
+            /* ไม่จำกัดความกว้าง เพื่อให้ไอคอนเรียงกันไปเรื่อยๆ */
+        }
+        .stage-icon {
+            min-width: 40px; height: 40px; border-radius: 50%; border: 2px solid #ccc;
+            background-color: white; display: flex; justify-content: center; align-items: center;
+            font-size: 16px; color: #ccc; position: relative; flex-shrink: 0; /* ป้องกันการหดตัว */
+        }
+        .stage-icon.active { border-color: #FFC107; color: #333; box-shadow: 0 0 10px #FFC107; transform: scale(1.1); transition: 0.2s;}
+        .stage-icon.completed { border-color: #4CAF50; background-color: #E8F5E9; color: #4CAF50; }
+        .stage-num {
+            position: absolute; top: -18px; left: 50%; transform: translateX(-50%);
+            font-size: 11px; background: var(--border-wood);
+            color: white; border-radius: 8px; padding: 2px 6px; white-space: nowrap;
+            z-index: 2; /* ให้อยู่เหนือวงกลม */
+        }
+
+        #side-panel {
+            position: absolute; right: 20px; top: 110px; width: 180px;
+            background-color: var(--panel-bg); border: 3px solid var(--border-wood);
+            border-radius: 15px; padding: 10px; text-align: center;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+        .side-title { font-size: 12px; font-weight: bold; margin-bottom: 5px; color: #5D4037; }
+        .score-display { font-size: 24px; color: #F57F17; font-weight: bold; text-shadow: 1px 1px 0px #fff; }
+        .btn-trade {
+            margin-top: 10px; width: 100%; padding: 5px; background-color: #E0E0E0;
+            border: 2px solid #9E9E9E; border-radius: 10px; font-family: inherit;
+            font-weight: bold; color: #757575; cursor: not-allowed; font-size: 12px;
+        }
+        .btn-trade.ready {
+            background-color: #4CAF50; border-color: #388E3C; color: white; cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2); animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+
+        .map-node {
+            position: absolute; display: flex; flex-direction: column; align-items: center;
+            cursor: pointer; transition: transform 0.2s; bottom: 25%;
+            z-index: 10; /* ให้ Node อยู่เหนือของตกแต่ง */
+        }
+        .map-node:hover { transform: scale(1.1); }
+        .node-label {
+            background-color: var(--border-wood); color: white; padding: 2px 10px;
+            border-radius: 10px; font-size: 12px; margin-bottom: 5px;
+            border: 2px solid #3E2723; white-space: nowrap;
+        }
+        .node-icon-circle {
+            width: 45px; height: 45px; background-color: #e0e0e0; border: 3px solid #9e9e9e;
+            border-radius: 50%; display: flex; justify-content: center; align-items: center;
+            font-size: 20px; color: #757575; box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            background-color: white;
+        }
+        .node-icon-circle.completed { background-color: #A5D6A7; border-color: #2E7D32; color: #1B5E20; }
+        .node-icon-circle.current { background-color: #FFCC80; border-color: #EF6C00; color: #D84315; }
+
+        #character {
+            position: absolute; bottom: 27%; left: 0; z-index: 15; /* ให้ตัวละครอยู่หน้าสุด */
+            font-size: 50px; transform: translateX(-50%);
+            transition: left 0.8s ease-in-out; display: flex; flex-direction: column; align-items: center;
+        }
+        #char-sprite { filter: drop-shadow(0 5px 5px rgba(0,0,0,0.4)); animation: bounce 1s infinite alternate; }
+        
+        #bottom-bar {
+            position: absolute; bottom: 0; left: 0; width: 100%; height: 50px;
+            background-color: rgba(0,0,0,0.8); display: flex; justify-content: space-between;
+            align-items: center; padding: 0 20px;
+        }
+        .hint-text { color: white; font-size: 12px; display: flex; align-items: center; gap: 10px; }
+        .key-btn { background-color: #333; border: 1px solid #777; border-radius: 4px; padding: 2px 6px; font-family: monospace; }
+        
+        .btn-large {
+            background-color: var(--primary-color); color: white; border: 2px solid white;
+            border-radius: 15px; padding: 5px 20px; font-family: 'Mali', sans-serif;
+            font-weight: bold; font-size: 16px; cursor: pointer; box-shadow: 0 4px 0 #E65100;
+            transition: all 0.1s;
+        }
+        .btn-large:active { transform: translateY(4px); box-shadow: none; }
+        .btn-large:disabled { background-color: #ccc; border-color: #999; box-shadow: 0 4px 0 #999; color: #666; cursor: not-allowed; }
+
+        #quiz-modal-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.7); z-index: 100;
+            display: none; justify-content: center; align-items: center;
+        }
+        #quiz-modal {
+            width: 750px; max-height: 500px; overflow-y: auto;
+            background-color: var(--panel-bg); border: 6px solid var(--border-wood);
+            border-radius: 20px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+            position: relative; animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            pointer-events: auto;
+            /* Scrollbar สวยๆ */
+            scrollbar-width: thin; scrollbar-color: #8D6E63 #FFF8E1;
+        }
+        #quiz-modal::-webkit-scrollbar { width: 10px; }
+        #quiz-modal::-webkit-scrollbar-track { background: #FFF8E1; border-radius: 10px; }
+        #quiz-modal::-webkit-scrollbar-thumb { background-color: #8D6E63; border-radius: 10px; border: 2px solid #FFF8E1; }
+        
+        @keyframes popIn { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+
+        .stage-title {
+            background-color: var(--primary-color); color: white; display: inline-block;
+            padding: 5px 20px; border-radius: 20px; font-size: 18px; font-weight: bold;
+            margin-top: -35px; border: 3px solid white; box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            position: absolute; left: 50%; transform: translateX(-50%); z-index: 10;
+        }
+
+        .modal-content-flex { display: flex; gap: 20px; margin-top: 20px; }
+
+        .visual-box {
+            width: 250px; height: 250px; background-color: #E3F2FD;
+            border: 3px dashed #64B5F6; border-radius: 15px;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            position: relative; overflow: hidden; flex-shrink: 0;
+        }
+        .visual-box-title {
+            position: absolute; top: 5px; font-size: 12px; color: #1976D2;
+            background: rgba(255,255,255,0.8); padding: 2px 8px; border-radius: 10px;
+        }
+        .visual-mystery {
+            font-size: 60px; color: #90CAF9;
+            animation: pulseMystery 2s infinite;
+        }
+        @keyframes pulseMystery { 0% { opacity: 0.5; } 50% { opacity: 1; transform: scale(1.1); } 100% { opacity: 0.5; } }
+
+        /* Animation Classes สำหรับ Visuals ตอนเฉลย */
+        .anim-element { position: absolute; font-size: 40px; transition: all 0.5s; opacity: 0; }
+        .visual-box.show-anim .anim-element { opacity: 1; }
+        
+        /* แอนิเมชันมือหยิบ */
+        .visual-box.show-anim .hand-pick { top: -20px; animation: handPickAnim 1.5s infinite; color: #FFA000; }
+        .visual-box.show-anim .base-item { bottom: 30px; font-size: 60px; color: #795548; }
+        @keyframes handPickAnim { 0% { top: -20px; transform: scale(1); } 50% { top: 40px; transform: scale(0.9); } 100% { top: -20px; transform: scale(1); } }
+        
+        /* แอนิเมชันร่อน */
+        .visual-box.show-anim .sieve { top: 30%; color: #FFC107; font-size: 70px; animation: shakeAnim 0.5s infinite; }
+        .visual-box.show-anim .particle { font-size: 15px; color: #8D6E63; animation: fallAnim 1s infinite linear; }
+        @keyframes shakeAnim { 0% { transform: translateX(-5px) rotate(-5deg); } 50% { transform: translateX(5px) rotate(5deg); } 100% { transform: translateX(-5px) rotate(-5deg); } }
+        @keyframes fallAnim { 0% { top: 50%; opacity: 1; } 100% { top: 90%; opacity: 0; } }
+
+        /* แอนิเมชันแม่เหล็ก */
+        .visual-box.show-anim .magnet { top: 10%; color: #F44336; font-size: 70px; animation: hoverMagnet 2s infinite alternate; }
+        .visual-box.show-anim .iron { bottom: 20%; color: #607D8B; animation: pullUp 2s infinite alternate; }
+        @keyframes hoverMagnet { 0% { top: 10%; } 100% { top: 30%; } }
+        @keyframes pullUp { 0% { bottom: 20%; } 100% { bottom: 45%; } }
+
+        /* แอนิเมชันตกตะกอน */
+        .visual-box.show-anim .water-glass { bottom: 10%; font-size: 80px; color: #4FC3F7; opacity: 0.5; }
+        .visual-box.show-anim .sediment-arrow { top: 20%; font-size: 40px; color: #795548; animation: sinkAnim 2s infinite; }
+        @keyframes sinkAnim { 0% { top: 20%; opacity: 1; } 80% { top: 60%; opacity: 1; } 100% { top: 60%; opacity: 0; } }
+
+        /* แอนิเมชันรินออก */
+        .visual-box.show-anim .tilt-glass { font-size: 80px; color: #4FC3F7; animation: tiltAnim 2s infinite alternate; }
+        @keyframes tiltAnim { 0% { transform: rotate(0deg); } 100% { transform: rotate(-45deg); } }
+
+        /* แอนิเมชันกรอง */
+        .visual-box.show-anim .funnel { top: 20%; font-size: 70px; color: #BDBDBD; }
+        .visual-box.show-anim .flask { bottom: 10%; font-size: 70px; color: #4FC3F7; }
+        .visual-box.show-anim .drop { top: 55%; font-size: 20px; color: #29B6F6; animation: dropAnim 1s infinite; }
+        @keyframes dropAnim { 0% { top: 55%; opacity: 0; } 50% { opacity: 1; } 100% { top: 75%; opacity: 0; } }
+
+
+        .question-section { flex: 1; display: flex; flex-direction: column; }
+        #question-text { font-size: 18px; font-weight: 600; margin-bottom: 15px; color: #333; line-height: 1.4; }
+        .options-grid { display: grid; grid-template-columns: 1fr; gap: 8px; margin-bottom: 15px; }
+
+        .option-btn {
+            background-color: white; border: 2px solid #BCAAA4; border-radius: 12px;
+            padding: 8px 12px; font-family: 'Mali', sans-serif; font-size: 16px;
+            cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 10px; text-align: left;
+        }
+        .option-btn:hover { background-color: #FFF8E1; border-color: #FFC107; transform: translateX(5px); }
+        .method-tag {
+            background: #EFEBE9; color: #5D4037; font-size: 12px; padding: 2px 8px;
+            border-radius: 8px; font-weight: bold; width: 70px; text-align: center;
+        }
+        .option-btn.correct { background-color: #C8E6C9; border-color: #4CAF50; color: #1B5E20; }
+        .option-btn.wrong { background-color: #FFCDD2; border-color: #F44336; color: #B71C1C; }
+
+        #feedback-area {
+            font-size: 14px; color: #555; display: none; padding: 10px;
+            border-radius: 10px; background-color: #f5f5f5; margin-bottom: 15px; line-height: 1.4;
+        }
+
+        #btn-continue {
+            background-color: var(--secondary-color); color: white; border: none;
+            border-radius: 20px; padding: 8px 30px; font-size: 18px; font-family: inherit;
+            font-weight: bold; cursor: pointer; display: none; margin: 0 auto; box-shadow: 0 4px 0 #388E3C;
+        }
+        #btn-continue:active { transform: translateY(4px); box-shadow: none; }
+
+        .ai-chat-box {
+            margin-top: 10px; border-top: 2px dashed #ccc; padding-top: 10px;
+            display: flex; gap: 10px; align-items: flex-start;
+        }
+        .ai-btn {
+            background-color: #673AB7; color: white; border: none; padding: 8px 12px;
+            border-radius: 10px; cursor: pointer; font-family: inherit; font-weight: bold; white-space: nowrap;
+        }
+        .ai-input-container { flex: 1; display: flex; gap: 5px; }
+        #ai-chat-input {
+            flex: 1; padding: 8px; border: 2px solid #ccc; border-radius: 10px; font-family: inherit;
+        }
+        #ai-response {
+            background: #F3E5F5; border: 1px solid #CE93D8; padding: 10px; border-radius: 10px;
+            font-size: 14px; color: #4A148C; margin-top: 10px; display: none;
+        }
+        .typing::after { content: '...'; animation: typingDots 1.5s infinite; }
+        @keyframes typingDots { 0% { content: '.'; } 33% { content: '..'; } 66% { content: '...'; } }
+
+        .screen-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.85); z-index: 200;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            color: white; text-align: center; pointer-events: auto;
+        }
+        .game-title-big { font-size: 50px; color: #FFEB3B; margin-bottom: 10px; text-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        .game-subtitle { font-size: 20px; margin-bottom: 30px; }
+        #btn-start, #btn-restart {
+            background-color: #FF9800; color: white; border: 3px solid white;
+            border-radius: 30px; padding: 15px 50px; font-size: 24px; font-family: inherit;
+            font-weight: bold; cursor: pointer; box-shadow: 0 6px 0 #E65100; transition: 0.1s;
+        }
+        #btn-start:active, #btn-restart:active { transform: translateY(6px); box-shadow: none; }
+        #end-screen { display: none; }
+
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    
+    <!-- หน้าจอเริ่มเกม -->
+    <div id="start-screen" class="screen-overlay">
+        <h1 class="game-title-big">ภารกิจแยกสารอลเวง</h1>
+        <p class="game-subtitle">ผจญภัย 20 ด่าน ทบทวนการแยกสารผสม 6 วิธี</p>
+        <button id="btn-start">เริ่มทำภารกิจ</button>
+        <p style="margin-top:20px; font-size:14px; color:#aaa;">*กรุณาเปิดเสียงเพื่ออรรถรสในการเล่น*</p>
+    </div>
+
+    <!-- หน้าจอจบเกม -->
+    <div id="end-screen" class="screen-overlay">
+        <h1 class="game-title-big">ยินดีด้วย! จบหลักสูตรนักวิทย์</h1>
+        <p class="game-subtitle">คุณผ่านภารกิจการแยกสารครบ 20 ด่านแล้ว</p>
+        <div style="font-size: 30px; color: #FFC107; margin-bottom: 30px;">
+            คะแนนรวม: <span id="final-score">0</span> / 2000
+        </div>
+        <button id="btn-restart">เล่นอีกครั้ง</button>
+    </div>
+
+    <!-- ฉากหลังคงที่ -->
+    <div id="game-background">
+        <div class="cloud cloud-1"></div>
+        <div class="cloud cloud-2"></div>
+        <div class="cloud cloud-3"></div>
+        <div class="pathway"></div>
+    </div>
+
+    <!-- เลเยอร์แผนที่ (เคลื่อนที่ได้) -->
+    <div id="world-map">
+        <!-- ของตกแต่งในแผนที่ยาวๆ เปลี่ยนเป็นไอคอน FontAwesome เพื่อแก้ปัญหากล่องสี่เหลี่ยม -->
+        <div id="character">
+            <div id="char-sprite">
+                <span class="fa-stack fa-2x" style="font-size: 35px; filter: drop-shadow(0 5px 5px rgba(0,0,0,0.5));">
+                    <!-- เสื้อโค้ทสีน้ำตาล -->
+                    <i class="fa-solid fa-user-secret fa-stack-1x" style="color: #5D4037;"></i>
+                    <!-- แว่นขยายสีฟ้า (ซ้อนทับเข้าไปให้ดูมีสีสัน) -->
+                    <i class="fa-solid fa-magnifying-glass fa-stack-1x" style="color: #4FC3F7; font-size: 0.6em; margin-left: 20px; margin-top: 15px; text-shadow: 1px 1px 2px rgba(0,0,0,0.8);"></i>
+                </span>
+            </div>
+        </div>
+        
+        <!-- ด่านต่างๆ (จะถูกสร้างด้วย JavaScript) -->
+        <div id="nodes-container"></div>
+    </div>
+
+    <!-- UI Layer ที่ทับแผนที่ -->
+    <div id="top-ui-layer">
+        
+        <!-- ป้ายชื่อโรงเรียน -->
+        <div class="school-logo-container ui-element">
+            <div class="school-name">โรงเรียนจุฬเทพ</div>
+        </div>
+
+        <button id="btn-toggle-sound" class="sound-toggle-btn ui-element"><i class="fa-solid fa-volume-high"></i></button>
+
+        <div class="ui-element map-nav-btn" id="nav-left" onclick="playClick(); panMap('left')"><i class="fa-solid fa-chevron-left"></i></div>
+        <div class="ui-element map-nav-btn" id="nav-right" onclick="playClick(); panMap('right')"><i class="fa-solid fa-chevron-right"></i></div>
+
+        <!-- UI ด้านบน -->
+        <div id="top-bar" class="ui-element">
+            <div class="title-panel">
+                <h1>ภารกิจแยกสารผสม</h1>
+                <h2 id="current-mission-text">ด่านที่ 1 : เตรียมตัวเดินทาง</h2>
+            </div>
+            
+            <div id="progress-tracker-container">
+                <div id="progress-tracker">
+                    <!-- ไอคอน Tracker จะถูกสร้างด้วย JavaScript -->
+                </div>
+            </div>
+        </div>
+
+        <!-- แถบด้านขวา (คะแนน) -->
+        <div id="side-panel" class="ui-element">
+            <div class="side-title">คะแนนนักวิทย์ (เต็ม 2,000)</div>
+            <div class="score-display">
+                <span id="score-text">0</span>
+            </div>
+            <div style="font-size: 10px; color: #777; margin-top:5px;">(สะสม 1500 ขึ้นไปเพื่อรับเกียรติบัตร)</div>
+            <button id="btn-trade" class="btn-trade">แลกเกียรติบัตร</button>
+        </div>
+
+        <!-- แถบด้านล่าง -->
+        <div id="bottom-bar" class="ui-element">
+            <div class="hint-text">
+                <i class="fa-solid fa-circle-info"></i> <span>คลิกที่ด่านเพื่อเดินไป หรือกด <span class="key-btn">Spacebar</span> เพื่อเปิดคำถามเมื่อถึงด่าน</span>
+            </div>
+            <button class="btn-large" id="btn-open-quiz" disabled>เปิดแฟ้มคดี</button>
+        </div>
+    </div>
+
+    <!-- Pop-up คำถาม -->
+    <div id="quiz-modal-overlay" class="ui-element">
+        <div id="quiz-modal">
+            <div class="stage-title" id="modal-stage-title">ด่านที่ 1</div>
+            
+            <div class="modal-content-flex">
+                <!-- กล่องภาพจำลอง -->
+                <div class="visual-box" id="visual-box">
+                    <div class="visual-box-title">ภาพจำลองสถานการณ์</div>
+                    <!-- กล่องปริศนาก่อนเฉลย -->
+                    <i class="fa-solid fa-box-open visual-mystery" id="mystery-icon"></i>
+                    <!-- แอนิเมชันที่จะโผล่มาตอนเฉลย -->
+                    <div id="visual-animation" style="display: none; width:100%; height:100%; position:relative; justify-content:center; align-items:center;"></div>
+                </div>
+
+                <!-- ส่วนคำถาม -->
+                <div class="question-section">
+                    <div id="question-text">โจทย์คำถาม...</div>
+                    <div class="options-grid" id="options-container">
+                        <!-- ตัวเลือก -->
+                    </div>
+                    
+                    <div id="feedback-area"></div>
+                    <button id="btn-continue" onclick="completeStage()">ภารกิจต่อไป <i class="fa-solid fa-arrow-right"></i></button>
+                </div>
+            </div>
+            
+            <!-- ส่วน AI Chat -->
+            <div class="ai-chat-box">
+                <button class="ai-btn" id="btn-ai-hint"><i class="fa-solid fa-robot"></i> ขอคำใบ้</button>
+                <div class="ai-input-container">
+                    <input type="text" id="ai-chat-input" placeholder="สงสัยตรงไหน พิมพ์ถาม AI ได้เลย...">
+                    <button class="ai-btn" id="btn-ai-send"><i class="fa-solid fa-paper-plane"></i></button>
+                </div>
+            </div>
+            <div id="ai-response"></div>
+
+        </div>
+    </div>
+
+</div>
+
+<script>
+    const methodsData = {
+        "หยิบออก": { icon: "fa-hand-holding", tag: "หยิบออก" },
+        "ร่อน": { icon: "fa-filter", tag: "ร่อน" },
+        "แม่เหล็ก": { icon: "fa-magnet", tag: "แม่เหล็ก" },
+        "ตกตะกอน": { icon: "fa-arrow-down-wide-short", tag: "ตกตะกอน" },
+        "รินออก": { icon: "fa-wine-glass-empty", tag: "รินออก" },
+        "กรอง": { icon: "fa-flask", tag: "กรอง" }
+    };
+
+    const stagesData = [
+        // ด่าน 1-5
+        { id: 1, name: "ข้าวเปลือกเจ้าปัญหา", type: "หยิบออก", question: "คุณแม่ให้ช่วยแยก 'เมล็ดข้าวเปลือก' จำนวนหนึ่งที่ปนอยู่ใน 'ชามข้าวสาร' วิธีการใดเหมาะสมและง่ายที่สุด?", explanation: "การหยิบออก ใช้แยกของแข็งกับของแข็งที่ขนาดหรือสีต่างกันชัดเจน และมีปริมาณไม่มาก" },
+        { id: 2, name: "ทรายสร้างบ้าน", type: "ร่อน", question: "ช่างก่อสร้างต้องการ 'ทรายละเอียด' แต่ในกองทรายมีก้อนหินและกรวดปนอยู่ เราจะแยกกรวดที่มีขนาดใหญ่ออกได้อย่างไร?", explanation: "การร่อนด้วยตะแกรง ใช้แยกของแข็งที่ขนาดต่างกัน ทรายละเอียดจะลอดรูตะแกรงได้ส่วนหินจะติดอยู่ด้านบน" },
+        { id: 3, name: "เข็มในกองฟาง", type: "แม่เหล็ก", question: "ช่างเย็บผ้าทำ 'เข็มหมุดเหล็ก' ตกลงไปในกล่องกระดุมพลาสติกจำนวนมาก เพื่อความปลอดภัยและรวดเร็วควรใช้วิธีใดหาเข็ม?", explanation: "เข็มเป็นเหล็ก (สารแม่เหล็ก) การใช้แม่เหล็กดูดจึงดึงเฉพาะเข็มออกมาได้อย่างรวดเร็วโดยไม่ต้องใช้มือคุ้ย" },
+        { id: 4, name: "น้ำคลองขุ่นมัว", type: "ตกตะกอน", question: "ตักน้ำจากคลองมาพบว่าขุ่นมากเพราะมีเศษดินโคลนแขวนลอย เราควรใส่สารใดเพื่อช่วยให้ 'โคลนตกลงก้นภาชนะ' ได้เร็วขึ้น?", explanation: "การใช้สารส้มแกว่ง จะทำให้อนุภาคดินเหนียวจับตัวกันหนักขึ้นและจมลงสู่ก้นภาชนะ เรียกว่า การตกตะกอน" },
+        { id: 5, name: "เทน้ำทิ้ง", type: "รินออก", question: "หลังจากซาวข้าวสารเสร็จ ฝุ่นและเศษผงลอยขึ้นมาเหนือน้ำ วิธีใดดีที่สุดในการเอาน้ำขุ่นทิ้งโดยที่ข้าวสารไม่หกตามลงมา?", explanation: "การรินออกเบาๆ เป็นการเทของเหลวส่วนบนแยกออกจากของแข็งที่อยู่ด้านล่างอย่างระมัดระวัง" },
+        
+        // ด่าน 6-10
+        { id: 6, name: "น้ำสมุนไพรใสแจ๋ว", type: "กรอง", question: "ต้มน้ำเก๊กฮวยเสร็จแล้ว ต้องการแยก 'กากดอกเก๊กฮวย' ออกเพื่อให้ได้น้ำที่ใสสะอาดที่สุด ไม่มีกากปน ควรใช้วิธีใด?", explanation: "การกรองผ่านผ้าขาวบาง จะช่วยแยกของแข็งอนุภาคเล็กออกจากของเหลวได้ดีที่สุด" },
+        { id: 7, name: "เมล็ดถั่วปนเป", type: "หยิบออก", question: "ในจานมีเมล็ดถั่วแดงและถั่วเขียวผสมกันอยู่ 1 กำมือ ต้องการแยกถั่วแดงออกมา ควรใช้วิธีใด?", explanation: "เนื่องจากถั่วทั้งสองชนิดมีสีและขนาดต่างกันชัดเจน และมีปริมาณแค่มือเดียว การหยิบออกจึงง่ายที่สุด" },
+        { id: 8, name: "แป้งทำขนม", type: "ร่อน", question: "ก่อนทำเค้ก เชฟต้องการให้ 'แป้งสาลี' มีเนื้อเนียนละเอียด ไม่มีเม็ดแป้งที่จับตัวเป็นก้อน เชฟควรทำอย่างไร?", explanation: "การร่อนแป้งผ่านแร่ง (Sieve) จะทำให้อนุภาคแป้งกระจายตัว ก้อนที่ใหญ่กว่ารูจะถูกบี้หรือคัดทิ้งไป" },
+        { id: 9, name: "ผงเหล็กในทราย", type: "แม่เหล็ก", question: "ในการทดลองวิทยาศาสตร์ มีคนเผลอทำ 'ผงตะไบเหล็ก' หกปนกับ 'ทราย' วิธีใดแยกผงเหล็กคืนมาได้สมบูรณ์ที่สุด?", explanation: "การใช้แม่เหล็กวนเหนือผงทราย แม่เหล็กจะดูดเฉพาะผงตะไบเหล็กขึ้นมา ทิ้งทรายไว้ด้านล่าง" },
+        { id: 10, name: "น้ำโคลนทิ้งไว้", type: "ตกตะกอน", question: "หากตักน้ำโคลนมาใส่แก้ว แล้ว 'ตั้งทิ้งไว้นิ่งๆ เป็นเวลา 1 วัน' ปรากฏการณ์ใดจะเกิดขึ้นตามธรรมชาติ?", explanation: "ดินโคลนที่มีน้ำหนักมากกว่าน้ำ จะค่อยๆ จมลงสู่ก้นแก้วด้วยแรงโน้มถ่วง เรียกว่า การตกตะกอน (Sedimentation)" },
+        
+        // ด่าน 11-15
+        { id: 11, name: "แยกน้ำกะทิ", type: "รินออก", question: "คั้นน้ำกะทิเสร็จแล้วปล่อยทิ้งไว้สักพัก หัวกะทิ(ไขมัน)จะลอยอยู่ชั้นบนสุด ส่วนหางกะทิ(น้ำใส)อยู่ด้านล่าง หากต้องการเฉพาะหางกะทิใสๆ แบบง่ายๆ ควรทำไง?", explanation: "เราสามารถค่อยๆ ริน หรือตักส่วนของเหลวด้านบน (หัวกะทิ) ออก เพื่อให้เหลือแต่หางกะทิด้านล่างได้" },
+        { id: 12, name: "เครื่องกรองน้ำ", type: "กรอง", question: "หลักการทำงานของ 'ชั้นทรายและกรวด' ในเครื่องกรองน้ำแบบภูมิปัญญาชาวบ้าน ตรงกับการแยกสารวิธีใด?", explanation: "ชั้นทรายและกรวดทำหน้าที่เหมือนวัสดุกรอง (Filter) ที่คอยดักจับฝุ่นละอองและเศษผงไม่ให้ไหลไปพร้อมกับน้ำ" },
+        { id: 13, name: "เหรียญหล่น", type: "หยิบออก", question: "เหรียญสิบบาทตกลงไปในอ่างน้ำที่มีลูกแก้วแช่อยู่หลายลูก เราจะเอาเหรียญสิบบาทขึ้นมาได้อย่างไร?", explanation: "เหรียญและลูกแก้วมีขนาดใหญ่พอมองเห็นชัดเจน และเหรียญไม่ได้เป็นสารแม่เหล็ก จึงใช้มือหยิบออกได้เลย" },
+        { id: 14, name: "หาทองคำ", type: "ร่อน", question: "การ 'ร่อนทอง' ในแม่น้ำ อาศัยอุปกรณ์ที่มีลักษณะคล้ายตะแกรงตักดินทรายใต้น้ำขึ้นมาเขย่า หลักการนี้คืออะไร?", explanation: "การร่อน จะปล่อยให้ทรายและกรวดขนาดเล็กหลุดลอดรูไป ส่วนแร่ทองคำและหินใหญ่จะติดอยู่บนตะแกรง" },
+        { id: 15, name: "โรงงานขยะ", type: "แม่เหล็ก", question: "สายพานในโรงงานคัดแยกขยะ มีกระป๋องอะลูมิเนียม ขวดแก้ว และ 'กระป๋องเหล็ก' ปนกัน ควรติดตั้งเครื่องมือใดเหนือสายพาน?", explanation: "ติดตั้งแม่เหล็กไฟฟ้ากำลังสูงเหนือสายพาน เพื่อดูดเฉพาะขยะที่เป็นเหล็กขึ้นมา คัดแยกออกจากขยะประเภทอื่น" },
+        
+        // ด่าน 16-20
+        { id: 16, name: "น้ำประปาใส", type: "ตกตะกอน", question: "ขั้นตอนสำคัญในโรงผลิตน้ำประปา ที่เติมสารโคแอกกูแลนต์(เช่น สารส้ม) ลงในบ่อ เพื่อกำจัดความขุ่น คือขั้นตอนใด?", explanation: "คือขั้นตอนการทำให้ตกตะกอน (Coagulation & Flocculation) สารแขวนลอยจะรวมตัวกันเป็นก้อนใหญ่และจมลง" },
+        { id: 17, name: "เทน้ำเชื่อม", type: "รินออก", question: "เชื่อมกล้วยทิ้งไว้จนมีเกล็ดน้ำตาลเกาะก้นหม้อ ถ้าต้องการตักเฉพาะน้ำเชื่อมใสๆ มาราดขนม โดยไม่ให้เกล็ดน้ำตาลติดมา ควรทำไง?", explanation: "การรินออก ค่อยๆ เอียงหม้อเทเฉพาะน้ำเชื่อมส่วนบนสุดออกมา ระวังไม่ให้เกล็ดของแข็งที่ก้นหม้อไหลตามมา" },
+        { id: 18, name: "ทำกาแฟดริป", type: "กรอง", question: "การชง 'กาแฟดริป' (Drip Coffee) ที่เทน้ำร้อนผ่านผงกาแฟที่อยู่บนกระดาษ ถือเป็นการแยกสารวิธีใด?", explanation: "การกรอง น้ำร้อนจะละลายสารให้รสชาติและไหลผ่านกระดาษกรองลงมาเป็นน้ำกาแฟ (Filtrate) ทิ้งกากไว้บนกระดาษ" },
+        { id: 19, name: "คัดพลอย", type: "หยิบออก", question: "ชาวเหมืองนำหินกรวดที่ผ่านการร่อนแล้ว มาเทบนโต๊ะเพื่อคัดแยก 'อัญมณีสีแดง' ที่ปะปนอยู่ออกมา ขั้นตอนนี้ใช้วิธีใด?", explanation: "เมื่อปริมาณหินน้อยลง และอัญมณีมีสีสันโดดเด่นมองเห็นชัด การใช้คีมคีบหรือมือหยิบออกจึงเป็นวิธีที่แม่นยำที่สุด" },
+        { id: 20, name: "บททดสอบสุดท้าย", type: "แม่เหล็ก", question: "สมมติมี 'ผงเหล็ก ผงถ่าน และทราย' ปนกันอยู่ หากต้องการแยกผงเหล็กออกเป็นอันดับแรก ควรใช้วิธีใดเหมาะสมและได้ผลดีที่สุด?", explanation: "ผงเหล็กเป็นสารเดียวในส่วนผสมนี้ที่แม่เหล็กดูดติด การใช้แม่เหล็กจึงดึงผงเหล็กออกมาได้อย่างหมดจดและรวดเร็วที่สุด" }
+    ];
+
+    let currentStage = 1;
+    let unlockedStage = 1;
+    let totalScore = 0;
+    let currentStagePoints = 100; // คะแนนเต็มแต่ละด่าน
+    let mapOffset = 0;
+    const stageWidth = 140; // ระยะห่างระหว่างด่านบนแผนที่
+
+    let isMuted = false;
+    let isAudioInit = false;
+    let bgmPart, sfxSynth, polySfx;
+
+    // ฟังก์ชันเริ่มระบบเสียง
+    async function initAudio() {
+        if (isAudioInit) return;
+        await Tone.start();
+        
+        // อัปเดต: เปลี่ยนเป็น PolySynth เพื่อป้องกันเสียงชนกันเวลาผู้เล่นกดรัวๆ
+        sfxSynth = new Tone.PolySynth(Tone.Synth, {
+            oscillator: { type: "triangle" },
+            envelope: { attack: 0.01, decay: 0.1, sustain: 0, release: 0.1 }
+        }).toDestination();
+        sfxSynth.volume.value = -10;
+
+        polySfx = new Tone.PolySynth(Tone.Synth).toDestination();
+        polySfx.volume.value = -12;
+
+        const bgmSynth = new Tone.PolySynth(Tone.FMSynth).toDestination();
+        bgmSynth.volume.value = -25; 
+
+        const melody = [
+            {"time": "0:0", "note": ["C4", "E4"]}, {"time": "0:2", "note": "G4"},
+            {"time": "1:0", "note": ["A3", "C4"]}, {"time": "1:2", "note": "E4"},
+            {"time": "2:0", "note": ["F3", "A3"]}, {"time": "2:2", "note": "C4"},
+            {"time": "3:0", "note": ["G3", "B3"]}, {"time": "3:2", "note": "D4"}
+        ];
+        
+        bgmPart = new Tone.Part((time, value) => { bgmSynth.triggerAttackRelease(value.note, "8n", time); }, melody);
+        bgmPart.loop = true; bgmPart.loopEnd = "4m"; Tone.Transport.bpm.value = 100;
+        
+        if (!isMuted) { Tone.Transport.start(); bgmPart.start(0); }
+        isAudioInit = true;
+    }
+
+    function toggleSound() {
+        isMuted = !isMuted;
+        const btn = document.getElementById('btn-toggle-sound');
+        if (isMuted) {
+            btn.innerHTML = '<i class="fa-solid fa-volume-xmark"></i>'; btn.classList.add('muted');
+            Tone.Destination.mute = true;
+            if(isAudioInit) Tone.Transport.pause();
+        } else {
+            btn.innerHTML = '<i class="fa-solid fa-volume-high"></i>'; btn.classList.remove('muted');
+            Tone.Destination.mute = false;
+            if(isAudioInit) Tone.Transport.start();
+        }
+    }
+
+    // อัปเดต: บังคับใช้ Tone.now() เพื่อจัดการลำดับเวลาของเสียงให้แม่นยำ
+    function playClick() { if (isAudioInit && !isMuted) sfxSynth.triggerAttackRelease("C5", "32n", Tone.now()); }
+    function playCorrect() { if (isAudioInit && !isMuted) polySfx.triggerAttackRelease(["C4", "E4", "G4", "C5"], "8n", Tone.now()); }
+    function playWrong() { if (isAudioInit && !isMuted) sfxSynth.triggerAttackRelease("D2", "8n", Tone.now()); }
+    function playWin() { 
+        if (!isAudioInit || isMuted) return;
+        polySfx.triggerAttackRelease(["C4", "E4", "G4"], "4n", Tone.now());
+        polySfx.triggerAttackRelease(["F4", "A4", "C5"], "4n", Tone.now() + 0.4);
+        polySfx.triggerAttackRelease(["G4", "B4", "D5"], "4n", Tone.now() + 0.8);
+        polySfx.triggerAttackRelease(["C5", "E5", "G5", "C6"], "2n", Tone.now() + 1.2);
+    }
+
+    // ตัวแปรสำหรับ Gemini API
+    const geminiApiKey = ""; 
+
+    function initGame() {
+        const nodesContainer = document.getElementById('nodes-container');
+        const trackerContainer = document.getElementById('progress-tracker');
+        
+        nodesContainer.innerHTML = ''; trackerContainer.innerHTML = '';
+
+        stagesData.forEach((stage, index) => {
+            const i = index + 1;
+            
+            // 1. สร้าง Node บนแผนที่ (แสดง ? ปิดบังคำตอบไว้ก่อน)
+            const node = document.createElement('div');
+            node.className = `map-node`;
+            node.id = `node-${i}`;
+            node.style.left = `${100 + (i-1) * stageWidth}px`; 
+            node.onclick = () => moveToNode(i);
+            
+            node.innerHTML = `
+                <div class="node-label">ด่าน ${i}</div>
+                <div class="node-icon-circle"><i class="fa-solid fa-question"></i></div>
+            `;
+            nodesContainer.appendChild(node);
+
+            // 2. สร้าง Tracker ด้านบน (แสดง ? ปิดบังคำตอบไว้ก่อน)
+            const track = document.createElement('div');
+            track.className = `stage-icon ${i === 1 ? 'active' : ''}`;
+            track.id = `tracker-${i}`;
+            track.innerHTML = `
+                <i class="fa-solid fa-question"></i>
+                <div class="stage-num">${i}</div>
+            `;
+            trackerContainer.appendChild(track);
+        });
+
+        // Event Listeners
+        document.getElementById('btn-toggle-sound').addEventListener('click', toggleSound);
+
+        document.getElementById('btn-start').addEventListener('click', async () => {
+            await initAudio(); playClick();
+            document.getElementById('start-screen').style.display = 'none';
+            moveToNode(1);
+        });
+
+        document.getElementById('btn-restart').addEventListener('click', () => {
+            playClick(); setTimeout(() => location.reload(), 200);
+        });
+        
+        document.getElementById('btn-open-quiz').addEventListener('click', () => { playClick(); openQuizModal(); });
+        
+        document.addEventListener('keydown', (e) => {
+            if ((e.code === 'Space' || e.code === 'Enter') && !document.getElementById('btn-open-quiz').disabled && document.getElementById('quiz-modal-overlay').style.display !== 'flex') {
+                playClick(); openQuizModal();
+            }
+        });
+    }
+
+    function panMap(direction) {
+        const map = document.getElementById('world-map');
+        const maxOffset = - (stagesData.length * stageWidth) + 800; // คำนวณขอบเขตขวา
+        
+        if (direction === 'left') mapOffset += 300;
+        else if (direction === 'right') mapOffset -= 300;
+        
+        // จำกัดขอบเขตไม่ให้เลื่อนหลุดจอ
+        if (mapOffset > 0) mapOffset = 0;
+        if (mapOffset < maxOffset) mapOffset = maxOffset;
+        
+        map.style.transform = `translateX(${mapOffset}px)`;
+    }
+
+    function autoCenterCamera(nodeX) {
+        const map = document.getElementById('world-map');
+        const containerWidth = 1024;
+        // จัดให้ Node อยู่ตรงกลางจอ
+        let targetOffset = -nodeX + (containerWidth / 2);
+        
+        // จำกัดขอบเขต
+        const maxOffset = - (stagesData.length * stageWidth) + 800;
+        if (targetOffset > 0) targetOffset = 0;
+        if (targetOffset < maxOffset) targetOffset = maxOffset;
+
+        mapOffset = targetOffset;
+        map.style.transform = `translateX(${mapOffset}px)`;
+    }
+
+    // ฟังก์ชันเลื่อนแถบ Tracker ด้านบนให้อยู่ตรงกลางด่านปัจจุบัน
+    function centerProgressTracker(nodeId) {
+        const trackerContainer = document.getElementById('progress-tracker-container');
+        const tracker = document.getElementById('progress-tracker');
+        const targetTrack = document.getElementById(`tracker-${nodeId}`);
+        
+        if (targetTrack) {
+            // คำนวณหาจุดกึ่งกลางของกล่อง Container
+            const containerCenter = trackerContainer.offsetWidth / 2;
+            // หาตำแหน่งของไอคอนเป้าหมายเทียบกับจุดเริ่มต้นของแทร็ก
+            const trackLeft = targetTrack.offsetLeft + (targetTrack.offsetWidth / 2);
+            
+            // คำนวณระยะที่ต้องเลื่อนแทร็ก
+            let transformX = containerCenter - trackLeft;
+            
+            // ป้องกันไม่ให้เลื่อนเลยขอบซ้าย (ไม่ต้องเลื่อนถ้าอยู่ต้นๆ)
+            if (transformX > 0) transformX = 0;
+            
+            // ป้องกันไม่ให้เลื่อนเลยขอบขวา
+            const maxScroll = trackerContainer.offsetWidth - tracker.scrollWidth;
+            if (transformX < maxScroll) transformX = maxScroll;
+
+            // สั่งเลื่อนด้วย CSS Transform
+            tracker.style.transform = `translateX(${transformX}px)`;
+        }
+    }
+
+    function moveToNode(nodeId) {
+        if (nodeId > unlockedStage) return; // ล็อค
+        playClick();
+        currentStage = nodeId;
+        document.getElementById('current-mission-text').innerText = `ด่านที่ ${nodeId} : ${stagesData[nodeId-1].name}`;
+        
+        const targetNode = document.getElementById(`node-${nodeId}`);
+        const targetLeft = parseInt(targetNode.style.left);
+        
+        document.getElementById('character').style.left = `${targetLeft}px`;
+        autoCenterCamera(targetLeft);
+        centerProgressTracker(nodeId); // เลื่อน Tracker ด้านบน
+        
+        const btnOpenQuiz = document.getElementById('btn-open-quiz');
+        btnOpenQuiz.disabled = true; btnOpenQuiz.innerText = "กำลังเดินทาง...";
+        
+        setTimeout(() => {
+            if (!targetNode.querySelector('.node-icon-circle').classList.contains('completed')) {
+                btnOpenQuiz.disabled = false;
+                btnOpenQuiz.innerText = "เปิดแฟ้มคดี (Space)";
+                btnOpenQuiz.style.backgroundColor = "var(--secondary-color)";
+                btnOpenQuiz.style.color = "white";
+            } else {
+                btnOpenQuiz.innerText = "คดีนี้เคลียร์แล้ว";
+                btnOpenQuiz.style.backgroundColor = "#9E9E9E";
+            }
+            
+            document.querySelectorAll('.stage-icon').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.node-icon-circle').forEach(el => el.classList.remove('current'));
+            
+            document.getElementById(`tracker-${nodeId}`).classList.add('active');
+            targetNode.querySelector('.node-icon-circle').classList.add('current');
+            
+        }, 800);
+    }
+
+    function openQuizModal() {
+        const stageData = stagesData[currentStage - 1];
+        currentStagePoints = 100; // รีเซ็ตคะแนนเต็มของด่าน
+        
+        document.getElementById('modal-stage-title').innerText = `ด่านที่ ${stageData.id} : ${stageData.name}`;
+        document.getElementById('question-text').innerText = stageData.question;
+        
+        // 1. ซ่อนรูปเฉลย แสดงกล่องปริศนา
+        const visualBox = document.getElementById('visual-box');
+        visualBox.className = 'visual-box'; // reset class เอา show-anim ออก
+        document.getElementById('mystery-icon').style.display = 'block';
+        document.getElementById('visual-animation').style.display = 'none';
+
+        // 2. สร้างตัวเลือก (สร้างตัวหลอก + ตัวจริง แล้วสลับตำแหน่ง)
+        const optionsContainer = document.getElementById('options-container');
+        optionsContainer.innerHTML = '';
+        
+        const allMethodKeys = Object.keys(methodsData);
+        const wrongKeys = allMethodKeys.filter(k => k !== stageData.type).sort(() => 0.5 - Math.random()).slice(0, 3);
+        
+        const finalOptions = [
+            { type: stageData.type, text: `การ${stageData.type}`, isCorrect: true },
+            { type: wrongKeys[0], text: `การ${wrongKeys[0]}`, isCorrect: false },
+            { type: wrongKeys[1], text: `การ${wrongKeys[1]}`, isCorrect: false },
+            { type: wrongKeys[2], text: `การ${wrongKeys[2]}`, isCorrect: false }
+        ].sort(() => Math.random() - 0.5);
+
+        finalOptions.forEach((opt) => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.innerHTML = `<div class="method-tag">${methodsData[opt.type].tag}</div> <div>${opt.text}</div>`;
+            btn.onclick = () => { playClick(); checkAnswer(opt.isCorrect, btn, stageData); };
+            optionsContainer.appendChild(btn);
+        });
+
+        document.getElementById('feedback-area').style.display = 'none';
+        document.getElementById('btn-continue').style.display = 'none';
+        document.getElementById('ai-response').style.display = 'none';
+        document.getElementById('ai-chat-input').value = '';
+        document.getElementById('quiz-modal-overlay').style.display = 'flex';
+    }
+
+    function checkAnswer(isCorrect, btnElement, stageData) {
+        const allBtns = document.querySelectorAll('.option-btn');
+        const feedbackArea = document.getElementById('feedback-area');
+        feedbackArea.style.display = 'block';
+
+        if (isCorrect) {
+            playCorrect();
+            btnElement.classList.add('correct');
+            allBtns.forEach(b => b.style.pointerEvents = 'none');
+            
+            // แสดงแอนิเมชันเฉลยภาพจำลอง
+            renderIllustration(stageData.type);
+            
+            feedbackArea.innerHTML = `<span style="color:#2E7D32; font-size: 16px; font-weight:bold;"><i class="fa-solid fa-circle-check"></i> ถูกต้องยอดเยี่ยม! (+${currentStagePoints} คะแนน)</span><br><br>${stageData.explanation}`;
+            feedbackArea.style.backgroundColor = '#E8F5E9';
+            document.getElementById('btn-continue').style.display = 'block';
+            
+            addScore(currentStagePoints);
+        } else {
+            playWrong();
+            btnElement.classList.add('wrong');
+            currentStagePoints = Math.max(10, currentStagePoints - 30); // หักคะแนน
+            
+            feedbackArea.innerHTML = `<span style="color:#C62828; font-weight:bold;"><i class="fa-solid fa-circle-xmark"></i> ยังไม่ใช่นะ! (โดนหัก 30 คะแนน)</span><br>ลองคิดดูใหม่ หรือกดปุ่ม <b>ขอคำใบ้จาก AI</b> ด้านล่างดูสิ`;
+            feedbackArea.style.backgroundColor = '#FFEBEE';
+            
+            setTimeout(() => {
+                btnElement.classList.remove('wrong');
+                feedbackArea.style.display = 'none';
+            }, 2500);
+        }
+    }
+
+    function renderIllustration(methodType) {
+        const animContainer = document.getElementById('visual-animation');
+        const visualBox = document.getElementById('visual-box');
+        
+        document.getElementById('mystery-icon').style.display = 'none';
+        animContainer.style.display = 'flex';
+        animContainer.innerHTML = '';
+        
+        let html = '';
+        if (methodType === "หยิบออก") {
+            html = `<i class="fa-solid fa-hand-holding anim-element hand-pick"></i>
+                    <i class="fa-solid fa-bowl-rice anim-element base-item"></i>`;
+        } else if (methodType === "ร่อน") {
+            html = `<i class="fa-solid fa-bars-staggered anim-element sieve"></i>
+                    <i class="fa-solid fa-circle anim-element particle" style="left:40%; animation-delay: 0s;"></i>
+                    <i class="fa-solid fa-circle anim-element particle" style="left:50%; animation-delay: 0.3s;"></i>
+                    <i class="fa-solid fa-circle anim-element particle" style="left:60%; animation-delay: 0.6s;"></i>`;
+        } else if (methodType === "แม่เหล็ก") {
+            html = `<i class="fa-solid fa-magnet anim-element magnet"></i>
+                    <i class="fa-solid fa-paperclip anim-element iron" style="left:40%"></i>
+                    <i class="fa-solid fa-paperclip anim-element iron" style="left:60%"></i>`;
+        } else if (methodType === "ตกตะกอน") {
+            html = `<i class="fa-solid fa-glass-water anim-element water-glass"></i>
+                    <i class="fa-solid fa-arrow-down anim-element sediment-arrow"></i>`;
+        } else if (methodType === "รินออก") {
+            html = `<i class="fa-solid fa-wine-glass-empty anim-element tilt-glass"></i>`;
+        } else if (methodType === "กรอง") {
+            html = `<i class="fa-solid fa-filter anim-element funnel"></i>
+                    <i class="fa-solid fa-flask anim-element flask"></i>
+                    <i class="fa-solid fa-droplet anim-element drop"></i>`;
+        }
+        
+        animContainer.innerHTML = html;
+        // กระตุ้นให้ CSS Animation ทำงาน
+        setTimeout(() => { visualBox.classList.add('show-anim'); }, 50);
+    }
+
+    function addScore(points) {
+        totalScore += points;
+        document.getElementById('score-text').innerText = totalScore;
+        
+        if(totalScore >= 1500) {
+            const tradeBtn = document.getElementById('btn-trade');
+            tradeBtn.classList.add('ready'); tradeBtn.disabled = false;
+        }
+    }
+
+    function completeStage() {
+        playClick();
+        document.getElementById('quiz-modal-overlay').style.display = 'none';
+        
+        const stageData = stagesData[currentStage - 1];
+        const trueIconClass = methodsData[stageData.type].icon; // ดึงรูปที่ถูกต้องมาเฉลย
+
+        // เปลี่ยนเครื่องหมาย ? บนแผนที่เป็นไอคอนเฉลย
+        const currentNode = document.getElementById(`node-${currentStage}`);
+        const iconCircle = currentNode.querySelector('.node-icon-circle');
+        iconCircle.classList.remove('current');
+        iconCircle.classList.add('completed');
+        iconCircle.innerHTML = `<i class="fa-solid ${trueIconClass}"></i>`;
+        
+        // เปลี่ยนเครื่องหมาย ? บน Tracker เป็นไอคอนเฉลย
+        const currentTracker = document.getElementById(`tracker-${currentStage}`);
+        currentTracker.classList.add('completed');
+        currentTracker.innerHTML = `
+            <i class="fa-solid ${trueIconClass}"></i>
+            <div class="stage-num">${currentStage}</div>
+        `;
+        
+        document.getElementById('btn-open-quiz').disabled = true;
+
+        if (currentStage < stagesData.length) {
+            unlockedStage = Math.max(unlockedStage, currentStage + 1);
+            setTimeout(() => { moveToNode(currentStage + 1); }, 500);
+        } else {
+            setTimeout(() => {
+                playWin();
+                document.getElementById('final-score').innerText = totalScore;
+                document.getElementById('end-screen').style.display = 'flex';
+            }, 1000);
+        }
+    }
+
+    async function callGeminiAPI(userPrompt, isHint = false) {
+        const aiResponseBox = document.getElementById('ai-response');
+        aiResponseBox.style.display = 'block';
+        aiResponseBox.innerHTML = '<span class="typing">ดร.เจมินาย กำลังวิเคราะห์</span>';
+        
+        const stageData = stagesData[currentStage - 1];
+        
+        let systemPrompt = `คุณคือ ดร.เจมินาย ผู้ช่วยสอนวิทยาศาสตร์ใจดี ตอนนี้นักเรียนกำลังทำโจทย์: "${stageData.question}" (เฉลยที่ถูกต้องคือ: ${stageData.type}) `;
+        
+        if (isHint) {
+            systemPrompt += `นักเรียนขอคำใบ้ ข้อบังคับ: **ห้ามบอกเฉลยหรือวิธีการตรงๆ เด็ดขาด** แต่ให้บอกใบ้โดยพูดถึง 'สมบัติทางกายภาพ' ของสารที่อยู่ในโจทย์ (เช่น สถานะ, ขนาด, สี, ความเป็นแม่เหล็ก) เพื่อไกด์ให้เด็กคิดต่อเอง ตอบสั้นๆ เป็นมิตร ไม่เกิน 2 ประโยค`;
+        } else {
+            systemPrompt += `นักเรียนถามว่า: "${userPrompt}" จงตอบคำถามนักเรียนโดยใช้หลักการวิทยาศาสตร์อธิบายให้เด็กประถมเข้าใจง่ายๆ ถ้านักเรียนพยายามหลอกถามเฉลย ให้ปฏิเสธอย่างสุภาพและใบ้แทน`;
+        }
+
+        try {
+            if (!geminiApiKey) {
+                // จำลองการตอบหากไม่มี API Key (ใช้ใน Canvas)
+                setTimeout(() => {
+                    const mockHints = {
+                        "หยิบออก": "สังเกตดูสิว่า ของสองอย่างนี้ชิ้นใหญ่พอที่จะใช้มือจับได้ไหม? และสีต่างกันชัดเจนหรือเปล่า?",
+                        "ร่อน": "สารสองอย่างนี้มีขนาดใหญ่เล็กไม่เท่ากัน ถ้าเรามีอุปกรณ์ที่มีรูขนาดพอดี จะช่วยให้ของเล็กตกลงไปได้นะ",
+                        "แม่เหล็ก": "ลองนึกดูว่า ในบรรดาสิ่งของเหล่านี้ มีอะไรที่มีคุณสมบัติดึงดูดกับแม่เหล็กได้บ้าง?",
+                        "ตกตะกอน": "ถ้าปล่อยน้ำขุ่นทิ้งไว้นิ่งๆ นานๆ ดินโคลนที่หนักกว่าน้ำจะค่อยๆ เป็นยังไงนะ? มีสารอะไรช่วยเร่งได้ไหม?",
+                        "รินออก": "ถ้าของแข็งกองรวมกันอยู่ก้นหม้อหมดแล้ว เราจะเอาแค่น้ำใสๆ ด้านบนออกมาโดยไม่ใช้อุปกรณ์เพิ่มได้ยังไง?",
+                        "กรอง": "กากพวกนี้ชิ้นเล็กเกินกว่าจะหยิบ แต่เราอยากได้น้ำใสๆ เราต้องหาวัสดุที่มีรูเล็กมากๆ มาขวางไว้สิ"
+                    };
+                    let responseText = isHint ? mockHints[stageData.type] : "ว้าว คำถามน่าสนใจมาก! ลองใช้สมบัติทางกายภาพของสารมาช่วยวิเคราะห์ดูสิครับ เช่น ขนาด สี หรือสถานะของมัน";
+                    typeWriterEffect(responseText, aiResponseBox);
+                }, 1000);
+                return;
+            }
+
+            // (โค้ดสำหรับยิง API จริงหากใส่ Key)
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contents: [{ parts: [{ text: systemPrompt }] }] })
+            });
+            const data = await response.json();
+            const text = data.candidates[0].content.parts[0].text;
+            typeWriterEffect(text, aiResponseBox);
+
+        } catch (error) {
+            aiResponseBox.innerHTML = "ดร.เจมินาย สัญญาณขัดข้อง ขออภัยด้วยนะ!";
+        }
+    }
+
+    function typeWriterEffect(text, element) {
+        element.innerHTML = '';
+        let i = 0;
+        const timer = setInterval(() => {
+            if (i < text.length) {
+                element.innerHTML += text.charAt(i);
+                i++;
+            } else {
+                clearInterval(timer);
+            }
+        }, 30);
+    }
+
+    document.getElementById('btn-ai-hint').addEventListener('click', () => {
+        playClick();
+        callGeminiAPI("ขอคำใบ้หน่อยครับ", true);
+    });
+    
+    document.getElementById('btn-ai-send').addEventListener('click', () => {
+        playClick();
+        const inputField = document.getElementById('ai-chat-input');
+        if(inputField.value.trim() !== "") {
+            callGeminiAPI(inputField.value);
+            inputField.value = "";
+        }
+    });
+
+    // เริ่มต้นเมื่อโหลดหน้าจอเสร็จ
+    window.onload = initGame;
+
+</script>
+</body>
+</html>
